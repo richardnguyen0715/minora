@@ -10,7 +10,7 @@ from app.domain.entities.message import Message
 from app.domain.services.command_parser import CommandParser
 from app.domain.services.link_service import LinkService
 from app.domain.services.message_service import MessageService
-from app.infrastructure.commands.registry import get_command_registry
+from app.infrastructure.commands.setup import get_command_registry
 
 
 class HandleMessageUseCase:

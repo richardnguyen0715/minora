@@ -1,75 +1,56 @@
-"""Command domain model."""
+"""Command domain model following production-grade design."""
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable
 
 
 @dataclass
 class Command:
     """
-    Represents a Telegram bot command.
-
+    Production-grade command contract.
+    
+    Represents a bot command with structured semantics, validation, and execution.
+    
     Attributes:
-        name (str): Display name of the command (e.g., "Help").
-        command (str): Full command name (e.g., "help").
-        aliases (list[str]): Short versions (e.g., ["h", "?"]).
-        description (str): What this command does.
-        usage (str): How to use it (e.g., "/help or /h").
-        response_template (str): Response message template.
+        name (str): Unique command name (e.g., "find").
+        description (str): Human-readable description.
+        usage (str): Usage example (e.g., "/find <query>").
+        examples (list[str]): Example invocations shown in help output.
+        category (str): Command category (system|data|search|config|admin).
+        aliases (list[str]): Alternate command names.
+        args_schema (dict[str, type] | None): Arguments validation schema.
+        is_visible (bool): Whether the command should appear in help output.
+        handler (Callable): Handler function signature: (args: dict, user_id: str) -> str
     """
 
     name: str
-    command: str
-    aliases: list[str]
     description: str
     usage: str
-    response_template: str
+    category: str
+    handler: Callable[[dict[str, Any], str], str]
+    examples: list[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)
+    args_schema: dict[str, type] | None = None
+    is_visible: bool = True
 
-    @property
-    def all_versions(self) -> list[str]:
-        """Get all versions of this command (main + aliases)."""
-        return [self.command] + self.aliases
-
-    def matches(self, text: str) -> bool:
+    def validate_args(self, args: dict) -> tuple[bool, str | None]:
         """
-        Check if a command text matches this command.
-
+        Validate arguments against schema.
+        
         Args:
-            text (str): Command text (without leading slash).
-
+            args (dict): Arguments to validate.
+            
         Returns:
-            bool: True if text matches this command or any alias.
+            tuple[bool, str | None]: (is_valid, error_message)
         """
-        return text.lower() in [v.lower() for v in self.all_versions]
-
-    def format_response(
-        self,
-        args: str = "",
-        user: str = "User",
-        timestamp: str = "",
-        link_count: int = 0,
-        settings_info: str = "",
-        command_list: str = "",
-    ) -> str:
-        """
-        Format the response template with actual values.
-
-        Args:
-            args (str): Command arguments.
-            user (str): Username or user identifier.
-            timestamp (str): Current timestamp.
-            link_count (int): Number of saved links.
-            settings_info (str): Settings information.
-            command_list (str): List of commands for help.
-
-        Returns:
-            str: Formatted response message.
-        """
-        return self.response_template.format(
-            args=args,
-            user=user,
-            timestamp=timestamp,
-            link_count=link_count,
-            settings_info=settings_info,
-            command_list=command_list,
-        )
+        if self.args_schema is None:
+            return True, None
+        
+        for key, expected_type in self.args_schema.items():
+            if key not in args:
+                return False, f"Missing required argument: {key}"
+            
+            if not isinstance(args[key], expected_type):
+                return False, f"Invalid type for {key}: expected {expected_type.__name__}"
+        
+        return True, None

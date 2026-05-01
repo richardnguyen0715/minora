@@ -11,62 +11,68 @@ class TestCommandEntity:
 
     def test_command_creation(self):
         """Test creating a command."""
+        def handler(args, user_id):
+            return "[OK] Help"
+        
         cmd = Command(
-            name="Help",
-            command="help",
-            aliases=["h", "?"],
+            name="help",
             description="Show help",
-            usage="/help or /h",
-            response_template="Here are commands:\n{command_list}",
+            usage="/help",
+            category="system",
+            args_schema=None,
+            handler=handler,
         )
 
-        assert cmd.name == "Help"
-        assert cmd.command == "help"
-        assert cmd.aliases == ["h", "?"]
+        assert cmd.name == "help"
+        assert cmd.description == "Show help"
+        assert cmd.category == "system"
+        assert cmd.handler is not None
 
-    def test_command_all_versions(self):
-        """Test getting all command versions."""
+    def test_command_validation_no_schema(self):
+        """Test validation with no schema."""
+        def handler(args, user_id):
+            return "[OK]"
+        
         cmd = Command(
-            name="Help",
-            command="help",
-            aliases=["h", "?"],
-            description="Show help",
-            usage="/help or /h",
-            response_template="Help",
+            name="status",
+            description="Status check",
+            usage="/status",
+            category="system",
+            args_schema=None,
+            handler=handler,
         )
 
-        assert cmd.all_versions == ["help", "h", "?"]
+        is_valid, error = cmd.validate_args({})
+        assert is_valid
+        assert error is None
 
-    def test_command_matches(self):
-        """Test command matching."""
+    def test_command_validation_with_schema(self):
+        """Test validation with args schema."""
+        def handler(args, user_id):
+            return "[OK]"
+        
         cmd = Command(
-            name="Help",
-            command="help",
-            aliases=["h", "?"],
-            description="Show help",
-            usage="/help or /h",
-            response_template="Help",
+            name="find",
+            description="Search",
+            usage="/find <query>",
+            category="search",
+            args_schema={"query": str},
+            handler=handler,
         )
 
-        assert cmd.matches("help")
-        assert cmd.matches("h")
-        assert cmd.matches("?")
-        assert cmd.matches("HELP")  # Case insensitive
-        assert not cmd.matches("update")
+        # Valid args
+        is_valid, error = cmd.validate_args({"query": "milk"})
+        assert is_valid
+        assert error is None
 
-    def test_command_format_response(self):
-        """Test formatting response with template."""
-        cmd = Command(
-            name="Update",
-            command="update",
-            aliases=["u"],
-            description="Update",
-            usage="/update <args>",
-            response_template="Update received: {args}",
-        )
+        # Missing required arg
+        is_valid, error = cmd.validate_args({})
+        assert not is_valid
+        assert "query" in error
 
-        response = cmd.format_response(args="test data")
-        assert response == "Update received: test data"
+        # Wrong type
+        is_valid, error = cmd.validate_args({"query": 123})
+        assert not is_valid
 
 
 class TestCommandParser:
@@ -85,66 +91,40 @@ class TestCommandParser:
         assert not CommandParser.is_command("")
         assert not CommandParser.is_command(None)
 
-    def test_extract_command(self):
-        """Test extracting command and arguments."""
-        cmd, args = CommandParser.extract_command("/help")
+    def test_parse_simple_command(self):
+        """Test parsing simple command without args."""
+        cmd, args = CommandParser.parse("/help")
         assert cmd == "help"
-        assert args == ""
+        assert args == {}
 
-        cmd, args = CommandParser.extract_command("/find test query")
+    def test_parse_command_with_query(self):
+        """Test parsing command with positional argument."""
+        cmd, args = CommandParser.parse("/find milk")
         assert cmd == "find"
-        assert args == "test query"
+        assert args == {"query": "milk"}
 
-        cmd, args = CommandParser.extract_command("/update arg1 arg2 arg3")
-        assert cmd == "update"
-        assert args == "arg1 arg2 arg3"
+        cmd, args = CommandParser.parse("/find organic milk")
+        assert cmd == "find"
+        assert args == {"query": "organic milk"}
 
-    def test_extract_command_none(self):
-        """Test extracting command from non-command."""
-        result = CommandParser.extract_command("regular text")
-        assert result is None
+    def test_parse_command_with_flags(self):
+        """Test parsing command with flags."""
+        cmd, args = CommandParser.parse("/find milk --limit=10")
+        assert cmd == "find"
+        assert args == {"query": "milk", "limit": "10"}
 
-    def test_find_matching_command(self):
-        """Test finding matching command."""
-        commands = [
-            Command(
-                name="Help",
-                command="help",
-                aliases=["h"],
-                description="Help",
-                usage="/help",
-                response_template="Help",
-            ),
-            Command(
-                name="Find",
-                command="find",
-                aliases=["f", "search"],
-                description="Find",
-                usage="/find",
-                response_template="Finding",
-            ),
-        ]
+        cmd, args = CommandParser.parse("/status --verbose")
+        assert cmd == "status"
+        assert args == {"verbose": True}
 
-        # Match main command
-        match = CommandParser.find_matching_command("/help", commands)
-        assert match is not None
-        cmd, args = match
-        assert cmd.command == "help"
-        assert args == ""
+    def test_parse_non_command(self):
+        """Test parsing non-command text."""
+        cmd, args = CommandParser.parse("regular text")
+        assert cmd == ""
+        assert args == {}
 
-        # Match alias
-        match = CommandParser.find_matching_command("/h", commands)
-        assert match is not None
-        cmd, args = match
-        assert cmd.command == "help"
-
-        # Match with arguments
-        match = CommandParser.find_matching_command("/find test", commands)
-        assert match is not None
-        cmd, args = match
-        assert cmd.command == "find"
-        assert args == "test"
-
-        # No match
-        match = CommandParser.find_matching_command("/unknown", commands)
-        assert match is None
+    def test_parse_invalid_command(self):
+        """Test parsing various command formats."""
+        cmd, args = CommandParser.parse("/")
+        assert cmd == ""
+        assert args == {}

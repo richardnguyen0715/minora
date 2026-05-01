@@ -1,13 +1,11 @@
-"""Service for parsing and executing commands."""
+"""Service for parsing commands with structured arguments."""
 
-from typing import Optional
+import shlex
 from loguru import logger
-
-from app.domain.entities.command import Command
 
 
 class CommandParser:
-    """Parse and extract commands from text messages."""
+    """Parse command text into structured (command_name, args_dict)."""
 
     @staticmethod
     def is_command(text: str) -> bool:
@@ -23,71 +21,78 @@ class CommandParser:
         return text.strip().startswith("/") if text else False
 
     @staticmethod
-    def extract_command(text: str) -> Optional[tuple[str, str]]:
+    def parse(text: str) -> tuple[str, dict]:
         """
-        Extract command and arguments from text.
-
+        Parse command text into (command_name, args_dict).
+        
+        Supports:
+        - /help
+        - /find milk
+        - /find milk --limit=10
+        - /update key value
+        
         Args:
-            text (str): Message text (e.g., "/help" or "/find query").
-
+            text (str): Raw command text.
+            
         Returns:
-            Optional[tuple[str, str]]: Tuple of (command, args) or None if invalid.
-
+            tuple[str, dict]: (command_name, args_dict)
+            
         Example:
-            >>> extract_command("/help")
-            ("help", "")
-            >>> extract_command("/find test query")
-            ("find", "test query")
+            >>> parse("/find milk --limit=10")
+            ("find", {"query": "milk", "limit": "10"})
+            >>> parse("/status")
+            ("status", {})
         """
         if not CommandParser.is_command(text):
-            return None
+            return "", {}
 
-        # Remove leading slash and strip whitespace
+        # Remove leading slash and parse tokens
         text = text.lstrip("/").strip()
+        
+        if not text:
+            return "", {}
 
-        # Split into command and args
-        parts = text.split(maxsplit=1)
-        command = parts[0] if parts else ""
-        args = parts[1] if len(parts) > 1 else ""
+        try:
+            tokens = shlex.split(text)
+        except ValueError:
+            logger.warning("Failed to parse command tokens", extra={"text": text})
+            return "", {}
 
-        return (command, args)
+        if not tokens:
+            return "", {}
 
-    @staticmethod
-    def find_matching_command(
-        text: str,
-        commands: list[Command],
-    ) -> Optional[tuple[Command, str]]:
-        """
-        Find matching command from list of commands.
+        command = tokens[0]
+        args = {}
+        positional = []
 
-        Args:
-            text (str): Message text (e.g., "/help").
-            commands (list[Command]): Available commands.
+        # Parse remaining tokens
+        for token in tokens[1:]:
+            if token.startswith("--"):
+                # Flag format: --key=value or --key
+                flag = token[2:]
+                if "=" in flag:
+                    key, value = flag.split("=", 1)
+                    args[key] = value
+                else:
+                    args[flag] = True
+            elif token.startswith("-"):
+                # Short flag format: -k value
+                key = token[1:]
+                args[key] = True
+            else:
+                # Positional argument
+                positional.append(token)
 
-        Returns:
-            Optional[tuple[Command, str]]: Tuple of (command, args) or None.
-        """
-        extracted = CommandParser.extract_command(text)
-        if not extracted:
-            return None
-
-        command_text, args = extracted
-
-        # Find matching command
-        for command in commands:
-            if command.matches(command_text):
-                logger.debug(
-                    "Command matched",
-                    extra={
-                        "command": command.command,
-                        "text": command_text,
-                        "args": args,
-                    },
-                )
-                return (command, args)
+        # Store positional args as "query"
+        if positional:
+            args["query"] = " ".join(positional)
 
         logger.debug(
-            "No command matched",
-            extra={"text": command_text},
+            "command_parsed",
+            extra={
+                "command": command,
+                "args": args,
+            },
         )
-        return None
+
+        return command, args

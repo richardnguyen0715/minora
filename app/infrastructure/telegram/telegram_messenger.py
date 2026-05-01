@@ -24,13 +24,19 @@ class TelegramMessenger(Messenger):
         self.token = token
         self.base_url = f"{TELEGRAM_API_BASE_URL}/bot{token}"
 
-    async def send(self, chat_id: str, text: str) -> None:
+    async def send(
+        self,
+        chat_id: str,
+        text: str,
+        parse_mode: str | None = None,
+    ) -> None:
         """
         Send a message to a Telegram chat.
 
         Args:
             chat_id (str): The Telegram chat ID.
             text (str): The message text to send.
+            parse_mode (str | None): Optional Telegram parse mode.
 
         Raises:
             httpx.RequestError: If the HTTP request fails.
@@ -38,6 +44,9 @@ class TelegramMessenger(Messenger):
         """
         url = f"{self.base_url}/sendMessage"
         payload = {"chat_id": chat_id, "text": text}
+
+        if parse_mode:
+            payload["parse_mode"] = parse_mode
 
         try:
             async with httpx.AsyncClient() as client:
