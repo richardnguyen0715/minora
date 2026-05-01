@@ -70,7 +70,10 @@ def create_app() -> FastAPI:
     )
 
     # Initialize webhook dependencies
-    initialize_webhook(telegram_token=settings.telegram_token)
+    initialize_webhook(
+        telegram_token=settings.telegram_token,
+        allowed_chat_id=settings.telegram_chat_id,
+    )
 
     # Include routes
     app.include_router(router)

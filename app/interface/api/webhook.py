@@ -17,26 +17,21 @@ router = APIRouter()
 _messenger: Optional[TelegramMessenger] = None
 _use_case: Optional[HandleMessageUseCase] = None
 _session_maker = None
+_allowed_chat_id: Optional[str] = None
 
 
-def initialize_webhook(telegram_token: str) -> None:
+def initialize_webhook(telegram_token: str, allowed_chat_id: Optional[str] = None) -> None:
     """
     Initialize the webhook with necessary dependencies.
 
     Args:
         telegram_token (str): Telegram Bot API token.
+        allowed_chat_id (str, optional): If set, only process messages from this chat ID.
     """
-    global _messenger, _use_case, _session_maker
+    global _messenger, _session_maker, _allowed_chat_id
     _messenger = TelegramMessenger(token=telegram_token)
     _session_maker = get_session_maker()
-
-    # Create use case with messenger and database session capability
-    async def create_use_case(session: Optional[AsyncSession] = None):
-        return HandleMessageUseCase(messenger=_messenger, session=session)
-
-    # Store the factory for later use
-    global _use_case_factory
-    _use_case_factory = create_use_case
+    _allowed_chat_id = allowed_chat_id
 
 
 def normalize_message(telegram_payload: dict) -> Optional[Message]:
@@ -95,6 +90,8 @@ async def telegram_webhook(request: Request) -> dict:
     Receives updates from Telegram, normalizes them to domain entities,
     and processes them through the use case with database session.
 
+    If TELEGRAM_CHAT_ID is configured, only processes messages from that chat.
+
     Args:
         request (Request): FastAPI request containing Telegram payload.
 
@@ -118,6 +115,14 @@ async def telegram_webhook(request: Request) -> dict:
 
         if not message:
             logger.warning("Failed to normalize message")
+            return {"ok": True}
+
+        # Filter by chat_id if configured
+        if _allowed_chat_id and message.chat_id != _allowed_chat_id:
+            logger.info(
+                "Message from unauthorized chat, ignoring",
+                extra={"chat_id": message.chat_id, "allowed": _allowed_chat_id},
+            )
             return {"ok": True}
 
         # Create database session for this request

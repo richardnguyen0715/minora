@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     Attributes:
         telegram_token (str): Telegram Bot API token.
         telegram_webhook_url (str): URL where Telegram will send updates.
+        telegram_chat_id (str, optional): Telegram Chat ID to filter/restrict messages.
         redis_url (str): Redis connection URL for queue.
         log_level (str): Logging level.
         app_host (str): Application host for FastAPI.
@@ -22,6 +23,7 @@ class Settings(BaseSettings):
 
     telegram_token: str
     telegram_webhook_url: str
+    telegram_chat_id: str | None = Field(default=None)
     redis_url: str = Field(default="redis://localhost:6379")
     log_level: str = Field(default="INFO")
     app_host: str = Field(default="0.0.0.0")
