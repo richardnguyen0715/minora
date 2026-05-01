@@ -5,9 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.interfaces.messenger import Messenger
 from app.application.use_cases.save_link import SaveLinkUseCase
+from app.application.use_cases.handle_command import HandleCommandUseCase
 from app.domain.entities.message import Message
+from app.domain.services.command_parser import CommandParser
 from app.domain.services.link_service import LinkService
 from app.domain.services.message_service import MessageService
+from app.infrastructure.commands.registry import get_command_registry
 
 
 class HandleMessageUseCase:
@@ -15,10 +18,11 @@ class HandleMessageUseCase:
     Use case for handling incoming messages.
 
     Orchestrates the workflow:
-    1. Receive message
-    2. Extract and save links
-    3. Generate appropriate reply
-    4. Send response
+    1. Check if message is a command
+    2. If command: execute HandleCommandUseCase
+    3. If not command: extract and save links
+    4. Generate appropriate reply
+    5. Send response
     """
 
     def __init__(
@@ -34,6 +38,7 @@ class HandleMessageUseCase:
         self.messenger = messenger
         self.session = session
         self.save_link_use_case = SaveLinkUseCase(session) if session else None
+        self.command_use_case = HandleCommandUseCase(messenger)
 
     async def execute(
         self, message: Message, message_id: Optional[int] = None
@@ -54,6 +59,27 @@ class HandleMessageUseCase:
             },
         )
 
+        # Check if message is a command (starts with /)
+        if message.text and CommandParser.is_command(message.text):
+            logger.info(
+                "Command detected in message",
+                extra={"text": message.text},
+            )
+
+            # Execute command use case
+            await self.command_use_case.execute(
+                chat_id=message.chat_id,
+                text=message.text,
+                user_id=message.user_id,
+            )
+
+            logger.info(
+                "Message processed successfully (command)",
+                extra={"chat_id": message.chat_id},
+            )
+            return
+
+        # Not a command - handle as regular message
         # Generate default reply
         reply = MessageService.generate_reply(message)
         responses_to_send = [reply]

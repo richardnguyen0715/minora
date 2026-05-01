@@ -1,0 +1,79 @@
+# Telegram Bot Commands Configuration
+# Format:
+#   - name: Command name (display name)
+#     command: Full command (e.g., "help")
+#     aliases: Short versions (e.g., ["h", "?"])
+#     description: What this command does
+#     usage: How to use it (e.g., "/help" or "/find <query>")
+#     response_template: Response message template (can use {args}, {user}, {timestamp})
+
+commands:
+  - name: "Help"
+    command: "help"
+    aliases: ["h", "?"]
+    description: "Show all available commands"
+    usage: "/help or /h"
+    response_template: "Here are available commands:\n{command_list}"
+
+  - name: "Update"
+    command: "update"
+    aliases: ["u", "upd"]
+    description: "Update or modify something"
+    usage: "/update <args> or /u <args>"
+    response_template: "✓ Update command received with args: {args}\nProcessing your request..."
+
+  - name: "Find"
+    command: "find"
+    aliases: ["f", "search"]
+    description: "Search for something"
+    usage: "/find <query> or /f <query>"
+    response_template: "✓ Find command received with query: {args}\nSearching..."
+
+  - name: "Status"
+    command: "status"
+    aliases: ["s", "info"]
+    description: "Show bot status and statistics"
+    usage: "/status or /s"
+    response_template: "Bot Status:\n- Active: ✓\n- Links saved: {link_count}\n- Last update: {timestamp}"
+
+  - name: "List"
+    command: "list"
+    aliases: ["ls", "l"]
+    description: "List saved links or data"
+    usage: "/list or /l"
+    response_template: "✓ List command received\nRetrieving your saved items..."
+
+  - name: "Delete"
+    command: "delete"
+    aliases: ["del", "d", "rm"]
+    description: "Delete a saved link or item"
+    usage: "/delete <id> or /d <id>"
+    response_template: "✓ Delete command received for: {args}\nDeleting..."
+
+  - name: "Settings"
+    command: "settings"
+    aliases: ["config", "cfg"]
+    description: "Show or modify bot settings"
+    usage: "/settings or /config"
+    response_template: "✓ Settings command received\nCurrent configuration:\n{settings_info}"
+
+  - name: "Export"
+    command: "export"
+    aliases: ["exp", "save"]
+    description: "Export saved data"
+    usage: "/export or /exp"
+    response_template: "✓ Export command received\nPreparing your data export..."
+
+  - name: "Import"
+    command: "import"
+    aliases: ["imp", "load"]
+    description: "Import data"
+    usage: "/import <data> or /imp <data>"
+    response_template: "✓ Import command received\nProcessing your import..."
+
+  - name: "Clear"
+    command: "clear"
+    aliases: ["clr", "reset"]
+    description: "Clear data or cache"
+    usage: "/clear or /clr"
+    response_template: "⚠️ Clear command received\nThis will clear data. Use /clear confirm to proceed."
