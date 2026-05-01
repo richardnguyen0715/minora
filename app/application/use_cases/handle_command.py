@@ -66,7 +66,7 @@ class HandleCommandUseCase:
         )
 
         # Dispatch to handler (registry-driven, no if-else)
-        command, response = self.dispatcher.dispatch(command_name, args, user_id)
+        command, response = await self.dispatcher.dispatch(command_name, args, user_id)
 
         if not command:
             logger.debug(

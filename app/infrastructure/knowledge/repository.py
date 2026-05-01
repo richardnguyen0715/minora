@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from loguru import logger
-from sqlalchemy import delete, select
+from sqlalchemy import cast, delete, func, or_, select, Text as SAText
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.knowledge import KnowledgeDocument, KnowledgeEdge
@@ -63,13 +63,71 @@ class KnowledgeRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_nodes(self, node_type: str | None = None) -> list[NodeRecord]:
+    async def list_nodes(self, node_type: str | None = None, limit: int | None = None) -> list[NodeRecord]:
         """List nodes, optionally filtered by type."""
         statement = select(NodeRecord).order_by(NodeRecord.updated_at.desc())
         if node_type:
             statement = statement.where(NodeRecord.type == node_type)
+        if limit is not None:
+            statement = statement.limit(limit)
         result = await self.session.execute(statement)
         return result.scalars().all()
+
+    async def search_nodes(self, query: str, limit: int = 10) -> list[NodeRecord]:
+        """Search nodes by title, type, slug, tags, and metadata."""
+        pattern = f"%{query.lower()}%"
+
+        tagged_node_ids = (
+            select(NodeTagRecord.node_id)
+            .join(TagRecord, TagRecord.id == NodeTagRecord.tag_id)
+            .where(func.lower(TagRecord.name).like(pattern))
+        )
+
+        statement = (
+            select(NodeRecord)
+            .where(
+                or_(
+                    func.lower(NodeRecord.title).like(pattern),
+                    func.lower(NodeRecord.slug).like(pattern),
+                    func.lower(NodeRecord.type).like(pattern),
+                    func.lower(NodeRecord.file_path).like(pattern),
+                    func.lower(cast(NodeRecord.metadata_json, SAText)).like(pattern),
+                    NodeRecord.id.in_(tagged_node_ids),
+                )
+            )
+            .order_by(NodeRecord.updated_at.desc())
+            .limit(limit)
+        )
+
+        result = await self.session.execute(statement)
+        return result.scalars().all()
+
+    async def get_tags_for_node(self, node_id: str) -> list[str]:
+        """Return tag names attached to a node."""
+        result = await self.session.execute(
+            select(TagRecord.name)
+            .join(NodeTagRecord, TagRecord.id == NodeTagRecord.tag_id)
+            .where(NodeTagRecord.node_id == node_id)
+            .order_by(TagRecord.name.asc())
+        )
+        return list(result.scalars().all())
+
+    async def get_edges_for_node(self, node_id: str) -> list[KnowledgeEdge]:
+        """Return all incoming and outgoing edges for a node."""
+        result = await self.session.execute(
+            select(EdgeRecord)
+            .where(or_(EdgeRecord.from_id == node_id, EdgeRecord.to_id == node_id))
+            .order_by(EdgeRecord.created_at.desc())
+        )
+        return [
+            KnowledgeEdge(
+                from_id=edge.from_id,
+                to_id=edge.to_id,
+                type=edge.type,
+                weight=edge.weight,
+            )
+            for edge in result.scalars().all()
+        ]
 
     async def delete_node(self, node_id: str) -> bool:
         """Delete a node and associated metadata."""

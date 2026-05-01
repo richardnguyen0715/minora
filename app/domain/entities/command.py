@@ -1,7 +1,8 @@
 """Command domain model following production-grade design."""
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 
 @dataclass
@@ -27,7 +28,7 @@ class Command:
     description: str
     usage: str
     category: str
-    handler: Callable[[dict[str, Any], str], str]
+    handler: Callable[[dict[str, Any], str], str | Awaitable[str]]
     examples: list[str] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)
     args_schema: dict[str, type] | None = None

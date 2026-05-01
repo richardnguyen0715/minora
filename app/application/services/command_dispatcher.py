@@ -1,5 +1,7 @@
 """Command dispatcher for routing and execution."""
 
+import inspect
+
 from loguru import logger
 
 from app.infrastructure.commands.registry import CommandRegistry
@@ -21,7 +23,7 @@ class CommandDispatcher:
         """
         self.registry = registry
 
-    def dispatch(self, command_name: str, args: dict, user_id: str) -> tuple:
+    async def dispatch(self, command_name: str, args: dict, user_id: str) -> tuple:
         """
         Dispatch command to its handler.
         
@@ -57,6 +59,8 @@ class CommandDispatcher:
 
         try:
             response = command.handler(args, user_id)
+            if inspect.isawaitable(response):
+                response = await response
             logger.info(
                 "command_executed",
                 extra={

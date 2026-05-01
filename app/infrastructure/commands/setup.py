@@ -15,8 +15,10 @@ from app.infrastructure.commands.handlers.system import (
 from app.infrastructure.commands.handlers.data import (
     handle_list,
     handle_find,
+    handle_read,
     handle_update,
     handle_delete,
+    handle_visualize,
     handle_clear,
     handle_history,
 )
@@ -112,10 +114,10 @@ def build_registry() -> CommandRegistry:
 
     registry.register(Command(
         name="list",
-        description="List stored items",
+        description="List recent knowledge items",
         usage="/list",
-        category="data",
-        examples=["/list", "/list unread"],
+        category="knowledge",
+        examples=["/list"],
         args_schema=None,
         is_visible=True,
         aliases=["ls"],
@@ -124,10 +126,10 @@ def build_registry() -> CommandRegistry:
 
     registry.register(Command(
         name="find",
-        description="Search stored items",
+        description="Search knowledge metadata and file index",
         usage="/find <query> [--limit=10]",
-        category="data",
-        examples=["/find milk", "/find milk --limit=10"],
+        category="knowledge",
+        examples=["/find llm", "/find ai --limit=5"],
         args_schema={"query": str},
         is_visible=True,
         aliases=["search"],
@@ -135,32 +137,58 @@ def build_registry() -> CommandRegistry:
     ))
 
     registry.register(Command(
-        name="update",
-        description="Update data",
-        usage="/update <key> <value>",
-        category="data",
-        examples=["/update note buy milk"],
-        args_schema=None,
+        name="read",
+        description="Read a knowledge item by id",
+        usage="/read <id>",
+        category="knowledge",
+        examples=["/read concept_llm"],
+        args_schema={"query": str},
         is_visible=True,
+        aliases=["get", "show"],
+        handler=handle_read,
+    ))
+
+    registry.register(Command(
+        name="update",
+        description="Update a knowledge item by id",
+        usage="/update <id> [title=...] [content=...] [status=...]",
+        category="knowledge",
+        examples=["/update concept_llm title=LLM content=Updated text", "/update src_20260430_001 status=processed"],
+        args_schema={"query": str},
+        is_visible=True,
+        aliases=["edit"],
         handler=handle_update,
     ))
 
     registry.register(Command(
         name="delete",
-        description="Delete item",
+        description="Delete a knowledge item by id",
         usage="/delete <id>",
-        category="data",
-        examples=["/delete 123"],
-        args_schema=None,
+        category="knowledge",
+        examples=["/delete concept_llm"],
+        args_schema={"query": str},
         is_visible=True,
+        aliases=["remove"],
         handler=handle_delete,
     ))
 
     registry.register(Command(
+        name="visualize",
+        description="Visualize metadata DB and real-file contents",
+        usage="/visualize [id] [--limit=10]",
+        category="knowledge",
+        examples=["/visualize", "/visualize concept_llm", "/visualize --limit=5"],
+        args_schema=None,
+        is_visible=True,
+        aliases=["inspect", "dump"],
+        handler=handle_visualize,
+    ))
+
+    registry.register(Command(
         name="clear",
-        description="Clear all data",
+        description="Clear a knowledge item shortcut",
         usage="/clear confirm",
-        category="data",
+        category="knowledge",
         examples=["/clear confirm"],
         args_schema=None,
         is_visible=True,
@@ -169,9 +197,9 @@ def build_registry() -> CommandRegistry:
 
     registry.register(Command(
         name="history",
-        description="Show command history",
+        description="Show recent knowledge items",
         usage="/history [limit]",
-        category="data",
+        category="knowledge",
         examples=["/history", "/history 10"],
         args_schema=None,
         is_visible=True,
