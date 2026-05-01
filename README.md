@@ -2,6 +2,32 @@
 
 A production-ready Telegram message receiver system built with **clean architecture** principles that automatically responds to messages and saves links to a database.
 
+## Quick Start
+
+Two ways to receive messages:
+
+**🚀 Local Development (Long Polling):**
+```bash
+# .env
+TELEGRAM_TOKEN=your_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Run
+python -m app.main
+```
+
+**🌐 Production (Webhooks):**
+```bash
+# .env
+TELEGRAM_TOKEN=your_token
+TELEGRAM_WEBHOOK_URL=https://your-domain.com/webhook
+
+# Run
+python -m app.main
+```
+
+→ **[Detailed Setup Guide](docs/POLLING_SETUP.md)**
+
 ## Architecture
 
 The system follows a layered architecture with clear separation of concerns:
@@ -36,10 +62,17 @@ Infrastructure Layer (Telegram API, Database)
   - `config.py`: Environment configuration
 
 - **Interface Layer**: API and entry points
-  - `api/`: FastAPI webhook endpoint
-  - `main.py`: Application factory and entry point
+  - `api/`: FastAPI webhook endpoint (for webhook mode)
+  - `telegram/polling.py`: Long polling client (for local development)
+  - `main.py`: Application factory with auto-detection
 
 ## Features
+
+✨ **v0.3.0 - Long Polling Support**
+- 📱 **Long Polling**: Receive messages without public URL (local development)
+- 🌐 **Webhooks**: Instant delivery for production servers
+- Auto-detects mode based on configuration
+- Exponential backoff on connection errors
 
 ✨ **v0.2.0 - Link Saving**
 - 🔗 Automatic link detection and extraction from messages
