@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from app.infrastructure.config import settings
+from app.infrastructure.database import init_db
 from app.interface.api.webhook import initialize_webhook, router
 from app.logging_config import setup_logging
 
@@ -17,6 +18,19 @@ async def lifespan(app: FastAPI):
     Args:
         app (FastAPI): The FastAPI application instance.
     """
+    logger.info("Application starting up")
+
+    # Initialize database
+    try:
+        await init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(
+            "Failed to initialize database",
+            extra={"error": str(e)},
+        )
+        raise
+
     logger.info("Application started successfully")
     yield
     logger.info("Application shutting down")
@@ -26,7 +40,7 @@ def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
 
-    Sets up logging, routes, and initializes dependencies.
+    Sets up logging, routes, database, and initializes dependencies.
 
     Returns:
         FastAPI: Configured FastAPI application instance.
@@ -43,14 +57,15 @@ def create_app() -> FastAPI:
         },
     )
 
-    # Create logs directory if it doesn't exist
+    # Create logs and data directories
     os.makedirs("logs", exist_ok=True)
+    os.makedirs("data", exist_ok=True)
 
     # Create FastAPI app with lifespan context manager
     app = FastAPI(
         title="Telegram Message Receiver",
-        description="Clean architecture Telegram message receiver system",
-        version="0.1.0",
+        description="Clean architecture Telegram message receiver with link saving",
+        version="0.2.0",
         lifespan=lifespan,
     )
 

@@ -1,7 +1,12 @@
+from typing import Optional
+
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.interfaces.messenger import Messenger
+from app.application.use_cases.save_link import SaveLinkUseCase
 from app.domain.entities.message import Message
+from app.domain.services.link_service import LinkService
 from app.domain.services.message_service import MessageService
 
 
@@ -9,24 +14,36 @@ class HandleMessageUseCase:
     """
     Use case for handling incoming messages.
 
-    Orchestrates the workflow: receive message → generate reply → send response.
+    Orchestrates the workflow:
+    1. Receive message
+    2. Extract and save links
+    3. Generate appropriate reply
+    4. Send response
     """
 
-    def __init__(self, messenger: Messenger) -> None:
+    def __init__(
+        self, messenger: Messenger, session: Optional[AsyncSession] = None
+    ) -> None:
         """
         Initialize the use case with a messenger implementation.
 
         Args:
             messenger (Messenger): The messenger interface implementation.
+            session (Optional[AsyncSession]): Database session for link operations.
         """
         self.messenger = messenger
+        self.session = session
+        self.save_link_use_case = SaveLinkUseCase(session) if session else None
 
-    async def execute(self, message: Message) -> None:
+    async def execute(
+        self, message: Message, message_id: Optional[int] = None
+    ) -> None:
         """
         Execute the message handling workflow.
 
         Args:
             message (Message): The normalized message to handle.
+            message_id (Optional[int]): Telegram message ID for reference.
         """
         logger.info(
             "Processing message",
@@ -37,14 +54,55 @@ class HandleMessageUseCase:
             },
         )
 
+        # Generate default reply
         reply = MessageService.generate_reply(message)
+        responses_to_send = [reply]
 
-        logger.debug(
-            "Generated reply",
-            extra={"chat_id": message.chat_id, "reply": reply},
-        )
+        # Check for links and save them
+        if message.text and LinkService.has_links(message.text):
+            logger.debug(
+                "Links detected in message",
+                extra={"chat_id": message.chat_id},
+            )
 
-        await self.messenger.send(message.chat_id, reply)
+            if self.save_link_use_case:
+                try:
+                    result = await self.save_link_use_case.execute(
+                        chat_id=message.chat_id,
+                        user_id=message.user_id,
+                        text=message.text,
+                        message_id=message_id or 0,
+                    )
+
+                    # Add link-specific responses
+                    if result["responses"]:
+                        responses_to_send = result["responses"]
+
+                    logger.info(
+                        "Links processed and saved",
+                        extra={
+                            "chat_id": message.chat_id,
+                            "count": result["links_found"],
+                        },
+                    )
+
+                except Exception as e:
+                    logger.error(
+                        "Failed to process links",
+                        extra={
+                            "chat_id": message.chat_id,
+                            "error": str(e),
+                        },
+                    )
+
+        # Send all responses
+        for response in responses_to_send:
+            logger.debug(
+                "Sending response",
+                extra={"chat_id": message.chat_id, "response": response},
+            )
+
+            await self.messenger.send(message.chat_id, response)
 
         logger.info(
             "Message processed successfully",

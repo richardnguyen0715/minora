@@ -2,10 +2,12 @@ from typing import Optional
 
 from fastapi import APIRouter, Request
 from loguru import logger
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.handle_message import HandleMessageUseCase
 from app.domain.entities.message import Message
 from app.domain.enums.message_type import MessageType
+from app.infrastructure.database import get_session_maker
 from app.infrastructure.telegram.telegram_messenger import TelegramMessenger
 
 router = APIRouter()
@@ -14,6 +16,7 @@ router = APIRouter()
 # These will be set by the main application
 _messenger: Optional[TelegramMessenger] = None
 _use_case: Optional[HandleMessageUseCase] = None
+_session_maker = None
 
 
 def initialize_webhook(telegram_token: str) -> None:
@@ -23,9 +26,17 @@ def initialize_webhook(telegram_token: str) -> None:
     Args:
         telegram_token (str): Telegram Bot API token.
     """
-    global _messenger, _use_case
+    global _messenger, _use_case, _session_maker
     _messenger = TelegramMessenger(token=telegram_token)
-    _use_case = HandleMessageUseCase(messenger=_messenger)
+    _session_maker = get_session_maker()
+
+    # Create use case with messenger and database session capability
+    async def create_use_case(session: Optional[AsyncSession] = None):
+        return HandleMessageUseCase(messenger=_messenger, session=session)
+
+    # Store the factory for later use
+    global _use_case_factory
+    _use_case_factory = create_use_case
 
 
 def normalize_message(telegram_payload: dict) -> Optional[Message]:
@@ -82,7 +93,7 @@ async def telegram_webhook(request: Request) -> dict:
     Handle incoming Telegram webhook updates.
 
     Receives updates from Telegram, normalizes them to domain entities,
-    and processes them through the use case.
+    and processes them through the use case with database session.
 
     Args:
         request (Request): FastAPI request containing Telegram payload.
@@ -90,8 +101,8 @@ async def telegram_webhook(request: Request) -> dict:
     Returns:
         dict: Webhook response.
     """
-    if not _use_case:
-        logger.error("Use case not initialized")
+    if not _session_maker:
+        logger.error("Session maker not initialized")
         return {"ok": False, "error": "Service not initialized"}
 
     try:
@@ -103,12 +114,16 @@ async def telegram_webhook(request: Request) -> dict:
         )
 
         message = normalize_message(payload)
+        message_id = payload.get("message", {}).get("message_id")
 
         if not message:
             logger.warning("Failed to normalize message")
             return {"ok": True}
 
-        await _use_case.execute(message)
+        # Create database session for this request
+        async with _session_maker() as session:
+            use_case = HandleMessageUseCase(messenger=_messenger, session=session)
+            await use_case.execute(message, message_id=message_id)
 
         return {"ok": True}
 
