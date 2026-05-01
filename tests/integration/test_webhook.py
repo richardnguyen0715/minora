@@ -11,7 +11,17 @@ from app.domain.enums.message_type import MessageType
 @pytest.fixture
 def client():
     """Create test client for FastAPI app."""
+    from app.infrastructure.config import settings
+    from app.interface.api.webhook import initialize_webhook
+
     app = create_app()
+
+    # Manually initialize webhook since TestClient doesn't trigger async lifespan
+    initialize_webhook(
+        telegram_token=settings.telegram_token,
+        allowed_chat_id=settings.telegram_chat_id,
+    )
+
     return TestClient(app)
 
 

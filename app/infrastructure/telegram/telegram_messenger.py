@@ -68,3 +68,64 @@ class TelegramMessenger(Messenger):
                 },
             )
             raise
+
+    async def get_updates(
+        self,
+        offset: int = 0,
+        timeout: int = 30,
+    ) -> list[dict]:
+        """
+        Get updates from Telegram using long polling.
+
+        Args:
+            offset (int): The update offset to start polling from.
+            timeout (int): Long polling timeout in seconds.
+
+        Returns:
+            list[dict]: List of Telegram update objects.
+
+        Raises:
+            httpx.RequestError: If the HTTP request fails.
+        """
+        url = f"{self.base_url}/getUpdates"
+        payload = {"offset": offset, "timeout": timeout}
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    timeout=timeout + 5,
+                )
+
+                if response.status_code != 200:
+                    logger.error(
+                        "Telegram getUpdates API error",
+                        extra={
+                            "status_code": response.status_code,
+                            "response": response.text,
+                        },
+                    )
+                    response.raise_for_status()
+
+                data = response.json()
+                if not data.get("ok"):
+                    logger.error(
+                        "Telegram API returned error",
+                        extra={"error_description": data.get("description")},
+                    )
+                    return []
+
+                updates = data.get("result", [])
+                logger.debug(
+                    "Got updates from Telegram",
+                    extra={"count": len(updates)},
+                )
+                return updates
+
+        except httpx.RequestError as e:
+            logger.error(
+                "Failed to get updates from Telegram",
+                extra={"error": str(e)},
+            )
+            raise
