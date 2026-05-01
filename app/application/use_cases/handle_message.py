@@ -96,13 +96,32 @@ class HandleMessageUseCase:
                     )
 
         # Send all responses
-        for response in responses_to_send:
-            logger.debug(
-                "Sending response",
+        logger.info(
+            "Preparing to send responses",
+            extra={
+                "chat_id": message.chat_id,
+                "response_count": len(responses_to_send),
+                "responses": responses_to_send,
+            },
+        )
+
+        for i, response in enumerate(responses_to_send):
+            logger.info(
+                f"Sending response {i+1}/{len(responses_to_send)}",
                 extra={"chat_id": message.chat_id, "response": response},
             )
 
-            await self.messenger.send(message.chat_id, response)
+            try:
+                await self.messenger.send(message.chat_id, response)
+                logger.info(
+                    "Response sent successfully",
+                    extra={"chat_id": message.chat_id},
+                )
+            except Exception as e:
+                logger.error(
+                    "Failed to send response",
+                    extra={"chat_id": message.chat_id, "error": str(e)},
+                )
 
         logger.info(
             "Message processed successfully",

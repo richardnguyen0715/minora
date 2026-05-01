@@ -91,15 +91,24 @@ class TelegramPoller:
             update (dict): Telegram update object.
         """
         try:
+            logger.debug(
+                "Raw update received",
+                extra={"update": update},
+            )
+
             message = self._normalize_message(update)
             message_id = update.get("message", {}).get("message_id")
 
             if not message:
+                logger.warning(
+                    "Failed to normalize message from update",
+                    extra={"update_id": update.get("update_id")},
+                )
                 return
 
             # Filter by chat_id if configured
             if self.allowed_chat_id and message.chat_id != self.allowed_chat_id:
-                logger.debug(
+                logger.info(
                     "Message from unauthorized chat, ignoring",
                     extra={
                         "chat_id": message.chat_id,
@@ -114,6 +123,8 @@ class TelegramPoller:
                     "update_id": update.get("update_id"),
                     "chat_id": message.chat_id,
                     "user_id": message.user_id,
+                    "type": message.type.value,
+                    "text": message.text,
                 },
             )
 
@@ -132,6 +143,7 @@ class TelegramPoller:
                     "error": str(e),
                     "update_id": update.get("update_id"),
                 },
+                exc_info=True,
             )
 
     async def poll(self, timeout: int = 30, backoff_base: float = 2.0) -> None:
