@@ -116,7 +116,7 @@ class CommandRegistry:
         if not self.commands:
             return "No commands available."
 
-        lines = ["📋 **Available Commands:**\n"]
+        lines = ["**Available Commands:** \n"]
 
         for cmd in self.commands:
             # Format: /command (aliases) - description
