@@ -95,6 +95,7 @@ def create_app() -> FastAPI:
     # Create logs and data directories
     os.makedirs("logs", exist_ok=True)
     os.makedirs("data", exist_ok=True)
+    os.makedirs("knowledge", exist_ok=True)
 
     # Create FastAPI app with lifespan context manager
     app = FastAPI(
