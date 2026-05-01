@@ -63,6 +63,16 @@ class KnowledgeRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_node_by_url(self, url: str) -> NodeRecord | None:
+        """Get a node by source URL (if it exists in source metadata)."""
+        statement = (
+            select(NodeRecord)
+            .join(SourceMetadataRecord, SourceMetadataRecord.node_id == NodeRecord.id)
+            .where(SourceMetadataRecord.url == str(url))
+        )
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
     async def list_nodes(self, node_type: str | None = None, limit: int | None = None) -> list[NodeRecord]:
         """List nodes, optionally filtered by type."""
         statement = select(NodeRecord).order_by(NodeRecord.updated_at.desc())
