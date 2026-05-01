@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_WEBHOOK_URL=${TELEGRAM_WEBHOOK_URL}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+    depends_on:
+      - redis
+    networks:
+      - telegram_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - telegram_network
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+networks:
+  telegram_network:
+    driver: bridge
+
+volumes:
+  redis_data:
