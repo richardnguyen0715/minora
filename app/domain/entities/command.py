@@ -33,6 +33,7 @@ class Command:
     aliases: list[str] = field(default_factory=list)
     args_schema: dict[str, type] | None = None
     is_visible: bool = True
+    requires_context: bool = False
 
     def validate_args(self, args: dict) -> tuple[bool, str | None]:
         """

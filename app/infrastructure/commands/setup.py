@@ -236,12 +236,13 @@ def build_registry() -> CommandRegistry:
 
     registry.register(Command(
         name="import",
-        description="Import data",
-        usage="/import <source>",
+        description="Import source from URL (full AI pipeline)",
+        usage="/import <url>",
         category="config",
-        examples=["/import backup.json"],
+        examples=["/import https://example.com/article"],
         args_schema=None,
         is_visible=True,
+        requires_context=True,
         handler=handle_import,
     ))
 

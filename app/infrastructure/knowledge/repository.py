@@ -287,6 +287,11 @@ class KnowledgeRepository:
             "platform": document.metadata.get("platform"),
             "author": document.metadata.get("author"),
             "language": document.metadata.get("language"),
+            "source_type": document.metadata.get("source_type", "article"),
+            "ingested_by": document.metadata.get("ingested_by"),
+            "title_extracted": document.metadata.get("title_extracted"),
+            "summary": document.metadata.get("summary"),
+            "content_hash": document.metadata.get("content_hash"),
         }
         if record is None:
             self.session.add(SourceMetadataRecord(**payload))

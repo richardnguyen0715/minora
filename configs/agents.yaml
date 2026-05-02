@@ -1,0 +1,42 @@
+# Agent Pipeline Configuration
+# All magic numbers and tunables are centralized here.
+
+llm:
+  provider: gemini
+  model: gemini-2.0-flash
+  max_retries: 3
+  timeout_seconds: 60
+  temperature: 0.3
+  max_output_tokens: 4096
+
+agents:
+  fetch:
+    timeout_seconds: 30
+    max_content_length: 100000
+    user_agent: "Minora/1.0 KnowledgeBot"
+
+  parse:
+    max_content_length: 50000
+    fallback_to_raw: true
+
+  extract:
+    max_key_points: 10
+    max_concepts: 15
+    max_entities: 10
+
+  concept:
+    auto_create: true
+
+  insight:
+    max_insights: 5
+
+  storage:
+    knowledge_root: "knowledge"
+
+  report:
+    max_summary_length: 500
+
+pipeline:
+  parallel_extraction: true
+  dedup_by_url: true
+  notify_on_complete: true

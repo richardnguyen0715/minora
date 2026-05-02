@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, Float, Integer, LargeBinary, String, Text, UniqueConstraint
 from sqlalchemy.types import JSON
+from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -145,7 +146,7 @@ class EmbeddingRecord(Base):
 
 
 class SourceMetadataRecord(Base):
-    """Source-specific metadata."""
+    """Source-specific metadata following file-content.md spec."""
 
     __tablename__ = "sources"
 
@@ -154,6 +155,11 @@ class SourceMetadataRecord(Base):
     platform = Column(String(64), nullable=True, index=True)
     author = Column(String(255), nullable=True)
     language = Column(String(32), nullable=True, index=True)
+    source_type = Column(String(32), nullable=True, default="article")
+    ingested_by = Column(String(64), nullable=True)
+    title_extracted = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+    content_hash = Column(String(64), nullable=True, index=True)
 
 
 class ConceptMetadataRecord(Base):
