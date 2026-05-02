@@ -8,6 +8,17 @@ llm:
   timeout_seconds: 60
   temperature: 0.3
   max_output_tokens: 4096
+  max_prompt_content_length: 30000
+  api_base_url: "https://generativelanguage.googleapis.com/v1beta/models"
+
+platforms:
+  facebook: ["facebook", "fb"]
+  twitter: ["twitter", "x.com"]
+  youtube: ["youtube", "youtu.be"]
+  reddit: ["reddit"]
+  medium: ["medium"]
+  github: ["github"]
+  arxiv: ["arxiv"]
 
 agents:
   fetch:

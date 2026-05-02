@@ -27,6 +27,7 @@ class ExtractAgent(BaseAgent):
         max_key_points: int = 10,
         max_concepts: int = 15,
         max_entities: int = 10,
+        max_prompt_content_length: int = 30000,
     ) -> None:
         """
         Initialize extract agent.
@@ -36,11 +37,13 @@ class ExtractAgent(BaseAgent):
             max_key_points (int): Maximum key points to extract.
             max_concepts (int): Maximum concepts to extract.
             max_entities (int): Maximum entities to extract.
+            max_prompt_content_length (int): Max content chars sent to LLM prompt.
         """
         self.llm = llm
         self.max_key_points = max_key_points
         self.max_concepts = max_concepts
         self.max_entities = max_entities
+        self.max_prompt_content_length = max_prompt_content_length
 
     async def _execute(self, context: PipelineContext) -> PipelineContext:
         """
@@ -59,9 +62,8 @@ class ExtractAgent(BaseAgent):
         title = context.parse_result.title
 
         # Truncate content for LLM prompt to stay within token limits
-        max_prompt_content = 30000
-        if len(content) > max_prompt_content:
-            content = content[:max_prompt_content]
+        if len(content) > self.max_prompt_content_length:
+            content = content[: self.max_prompt_content_length]
 
         prompt = self._build_prompt(title, content)
         result = await self.llm.generate(prompt)

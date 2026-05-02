@@ -48,6 +48,7 @@ class IngestionOrchestrator:
             timeout_seconds=llm_config.get("timeout_seconds", 60),
             temperature=llm_config.get("temperature", 0.3),
             max_output_tokens=llm_config.get("max_output_tokens", 4096),
+            api_base_url=llm_config.get("api_base_url", ""),
         )
 
     def _generate_source_id(self, url: str, platform: str) -> str:
@@ -57,18 +58,13 @@ class IngestionOrchestrator:
         return f"src_{date_str}_{platform}_{short_hash}"
 
     def _detect_platform(self, url: str) -> str:
-        """Detect platform from URL."""
+        """Detect platform from URL using YAML-configured platform map."""
         domain = LinkService.extract_domain(url).lower()
-        platform_map = {
-            "facebook": "facebook", "fb": "facebook",
-            "twitter": "twitter", "x.com": "twitter",
-            "youtube": "youtube", "youtu.be": "youtube",
-            "reddit": "reddit", "medium": "medium",
-            "github": "github", "arxiv": "arxiv",
-        }
-        for key, value in platform_map.items():
-            if key in domain:
-                return value
+        platforms_config = self._config.get("platforms", {})
+        for platform_name, keywords in platforms_config.items():
+            for keyword in keywords:
+                if keyword in domain:
+                    return platform_name
         return "web"
 
     async def run(self, url: str, user_id: str, chat_id: str) -> str:
@@ -125,11 +121,13 @@ class IngestionOrchestrator:
             # Step 3: Extract (LLM)
             llm = self._get_llm()
             extract_cfg = agent_config.get("extract", {})
+            llm_config = self._config.get("llm", {})
             extract_agent = ExtractAgent(
                 llm=llm,
                 max_key_points=extract_cfg.get("max_key_points", 10),
                 max_concepts=extract_cfg.get("max_concepts", 15),
                 max_entities=extract_cfg.get("max_entities", 10),
+                max_prompt_content_length=llm_config.get("max_prompt_content_length", 30000),
             )
             context = await extract_agent.run(context)
             if context.status == "failed":

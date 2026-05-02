@@ -11,7 +11,7 @@ from loguru import logger
 from app.infrastructure.llm.provider import LLMProvider, LLMProviderError
 
 
-GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+DEFAULT_GEMINI_API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
 class GeminiProvider(LLMProvider):
@@ -34,6 +34,7 @@ class GeminiProvider(LLMProvider):
         timeout_seconds: int = 60,
         temperature: float = 0.3,
         max_output_tokens: int = 4096,
+        api_base_url: str = "",
     ) -> None:
         """
         Initialize Gemini provider.
@@ -45,6 +46,7 @@ class GeminiProvider(LLMProvider):
             timeout_seconds (int): HTTP request timeout.
             temperature (float): LLM temperature parameter.
             max_output_tokens (int): Maximum tokens in response.
+            api_base_url (str): Gemini API base URL (overridable for testing/proxy).
 
         Raises:
             ValueError: If no API keys provided.
@@ -58,6 +60,7 @@ class GeminiProvider(LLMProvider):
         self.timeout_seconds = timeout_seconds
         self.temperature = temperature
         self.max_output_tokens = max_output_tokens
+        self.api_base_url = api_base_url or DEFAULT_GEMINI_API_BASE_URL
         self._current_key_index = 0
 
     def _get_current_key(self) -> str:
@@ -93,7 +96,7 @@ class GeminiProvider(LLMProvider):
         Returns:
             str: Full API URL.
         """
-        return f"{GEMINI_API_BASE_URL}/{self.model}:generateContent?key={api_key}"
+        return f"{self.api_base_url}/{self.model}:generateContent?key={api_key}"
 
     def _build_payload(self, prompt: str) -> dict[str, Any]:
         """
