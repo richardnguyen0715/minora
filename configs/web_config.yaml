@@ -1,0 +1,7 @@
+# Web UI Configuration
+web:
+  host: "0.0.0.0"
+  port: 8080
+  knowledge_root: "knowledge"
+  items_per_page: 20
+  max_search_results: 50

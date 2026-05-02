@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Minora Knowledge Base - Manage and visualize your 2-layer knowledge store">
+  <title>Minora Knowledge Base</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">Minora</div>
+        <div class="sidebar-subtitle">Knowledge Base</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Overview</div>
+        <a class="nav-item active" data-view="dashboard" href="#dashboard">
+          <span class="icon">📊</span><span class="nav-label">Dashboard</span>
+        </a>
+        <div class="nav-section-title">Data</div>
+        <a class="nav-item" data-view="knowledge" href="#knowledge">
+          <span class="icon">🧠</span><span class="nav-label">Knowledge</span>
+          <span class="nav-badge" id="nav-node-count">-</span>
+        </a>
+        <a class="nav-item" data-view="links" href="#links">
+          <span class="icon">🔗</span><span class="nav-label">Links</span>
+          <span class="nav-badge" id="nav-link-count">-</span>
+        </a>
+        <a class="nav-item" data-view="edges" href="#edges">
+          <span class="icon">🔀</span><span class="nav-label">Edges</span>
+          <span class="nav-badge" id="nav-edge-count">-</span>
+        </a>
+        <a class="nav-item" data-view="tags" href="#tags">
+          <span class="icon">🏷️</span><span class="nav-label">Tags</span>
+          <span class="nav-badge" id="nav-tag-count">-</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content" id="main-content">
+      <div class="loading"><div class="spinner"></div><p style="margin-top:12px">Loading...</p></div>
+    </main>
+  </div>
+
+  <!-- Modal overlay -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal-container"></div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/api.js"></script>
+  <script src="/static/ui.js"></script>
+  <script src="/static/view_dashboard.js"></script>
+  <script src="/static/view_knowledge.js"></script>
+  <script src="/static/view_detail.js"></script>
+  <script src="/static/view_others.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
