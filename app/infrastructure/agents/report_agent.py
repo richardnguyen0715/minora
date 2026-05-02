@@ -28,7 +28,7 @@ class ReportAgent(BaseAgent):
         """
         if context.status == "failed":
             return (
-                f"[ERROR] Import failed at stage: {context.error_stage}\n"
+                f"IMPORT FAILED at stage: {context.error_stage}\n"
                 f"Error: {context.error}\n"
                 f"Source: {context.url}"
             )
@@ -39,7 +39,7 @@ class ReportAgent(BaseAgent):
 
         # Title
         title = (parse.title if parse else None) or "Untitled"
-        lines.append(f"[OK] Import complete: {title}")
+        lines.append(f"IMPORT COMPLETE: {title}")
         lines.append(f"ID: {context.source_id}")
         lines.append("")
 
@@ -48,27 +48,27 @@ class ReportAgent(BaseAgent):
             summary = extract.summary
             if len(summary) > self.max_summary_length:
                 summary = summary[: self.max_summary_length] + "..."
-            lines.append("[SUMMARY]")
+            lines.append("-- Summary --")
             lines.append(summary)
             lines.append("")
 
         # Key points
         if extract and extract.key_points:
-            lines.append("[KEY POINTS]")
+            lines.append("-- Key Points --")
             for point in extract.key_points[:7]:
                 lines.append(f"- {point}")
             lines.append("")
 
         # Insights
         if context.insight_result and context.insight_result.insights:
-            lines.append("[INSIGHTS]")
+            lines.append("-- Insights --")
             for insight in context.insight_result.insights[:3]:
-                lines.append(f"- [{insight.impact}] {insight.text}")
+                lines.append(f"- ({insight.impact}) {insight.text}")
             lines.append("")
 
         # Concepts
         if extract and extract.concepts:
-            lines.append(f"[CONCEPTS] {', '.join(extract.concepts[:10])}")
+            lines.append(f"-- Concepts: {', '.join(extract.concepts[:10])}")
             lines.append("")
 
         # Stats
@@ -76,6 +76,6 @@ class ReportAgent(BaseAgent):
         if concept_result:
             lines.append(f"Concepts: {len(concept_result.created)} new, {len(concept_result.linked)} linked")
 
-        lines.append(f"[LINK] {context.url}")
+        lines.append(f"Link: {context.url}")
 
         return "\n".join(lines)

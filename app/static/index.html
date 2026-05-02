@@ -18,23 +18,28 @@
       <nav class="sidebar-nav">
         <div class="nav-section-title">Overview</div>
         <a class="nav-item active" data-view="dashboard" href="#dashboard">
-          <span class="icon">📊</span><span class="nav-label">Dashboard</span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="nav-label">Dashboard</span>
         </a>
         <div class="nav-section-title">Data</div>
         <a class="nav-item" data-view="knowledge" href="#knowledge">
-          <span class="icon">🧠</span><span class="nav-label">Knowledge</span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+          <span class="nav-label">Knowledge</span>
           <span class="nav-badge" id="nav-node-count">-</span>
         </a>
         <a class="nav-item" data-view="links" href="#links">
-          <span class="icon">🔗</span><span class="nav-label">Links</span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span class="nav-label">Links</span>
           <span class="nav-badge" id="nav-link-count">-</span>
         </a>
         <a class="nav-item" data-view="edges" href="#edges">
-          <span class="icon">🔀</span><span class="nav-label">Edges</span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          <span class="nav-label">Edges</span>
           <span class="nav-badge" id="nav-edge-count">-</span>
         </a>
         <a class="nav-item" data-view="tags" href="#tags">
-          <span class="icon">🏷️</span><span class="nav-label">Tags</span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span class="nav-label">Tags</span>
           <span class="nav-badge" id="nav-tag-count">-</span>
         </a>
       </nav>
@@ -54,6 +59,7 @@
   <!-- Toast container -->
   <div class="toast-container" id="toast-container"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="/static/api.js"></script>
   <script src="/static/ui.js"></script>
   <script src="/static/view_dashboard.js"></script>
